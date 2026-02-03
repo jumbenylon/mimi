@@ -1,0 +1,18 @@
+#!/bin/bash
+echo "🚀 MIMI AI: Initiating Cloud Sync..."
+
+# 1. Add all changes
+git add .
+
+# 2. Commit with timestamp
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+git commit -m "Phase 163: Sync Protocol - $TIMESTAMP"
+
+# 3. Push to Render (Neon DB)
+echo "☁️  Pushing to Cloud..."
+git push origin main
+
+echo ""
+echo "✅ Deployment Triggered."
+echo "⏳ Wait 2 minutes for Render to build."
+echo "👉 Then click this to Reset/Sync the DB: https://me.jumbenylon.com/sync"
