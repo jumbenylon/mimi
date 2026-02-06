@@ -21,9 +21,15 @@ app.add_middleware(
 # Register the Loans API
 app.include_router(loans_api.router)
 
-# --- CRITICAL HEALTH CHECK (Required for Render) ---
+# --- CRITICAL HEALTH CHECKS ---
+# Render is looking for this specific path:
+@app.get("/api/v1/health")
+def health_check_v1():
+    return {"status": "healthy", "service": "mimi-backend"}
+
+# Keep this one too, just in case:
 @app.get("/")
-def health_check():
+def health_check_root():
     return {"status": "healthy", "message": "Mimi Finance Backend is Live"}
 
 # --- DASHBOARD ENDPOINTS ---
