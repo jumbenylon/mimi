@@ -1,92 +1,134 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { Wallet, ShieldCheck, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Wallet, TrendingUp, DollarSign, Activity, AlertCircle, RefreshCw } from 'lucide-react';
 
-export default function MobileHome() {
+export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const fetchData = () => {
+  // FETCH DATA FROM 127.0.0.1 (NOT Localhost)
+  const loadData = () => {
     setLoading(true);
-    fetch('https://me.jumbenylon.com/analytics') 
-      .then(res => res.json())
-      .then(json => {
-        setData(json);
+    setError(null);
+    fetch('http://127.0.0.1:8000/api/dashboard')
+      .then(res => {
+        if (!res.ok) throw new Error("Server Unreachable");
+        return res.json();
+      })
+      .then(d => {
+        if (d.error) throw new Error(d.error);
+        setData(d);
         setLoading(false);
       })
-      .catch(e => setLoading(false));
+      .catch(err => {
+        console.error("Connection Failed:", err);
+        setError("Cannot connect to Backend (127.0.0.1:8000). Check Terminal 1.");
+        setLoading(false);
+      });
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const fmt = (n) => (n || 0).toLocaleString();
-  const getGradient = (color) => {
-    if(color === "red") return "from-red-600 to-red-900";
-    if(color === "blue") return "from-blue-600 to-blue-900";
-    if(color === "emerald") return "from-emerald-600 to-emerald-900";
-    if(color === "purple") return "from-purple-600 to-purple-900";
-    if(color === "cyan") return "from-cyan-600 to-cyan-900";
-    return "from-gray-800 to-gray-900";
+  const fmt = (n) => {
+    try { return new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n || 0); } 
+    catch (e) { return "TZS 0"; }
   };
 
   if (loading) return (
-    <div className="h-screen flex items-center justify-center bg-black">
-      <RefreshCw className="text-white animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 text-emerald-600 font-medium animate-pulse">
+      Connecting to Mimi Finance...
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-black text-white p-6 pb-20">
-      <div className="flex justify-between items-center mb-8 mt-4">
-        <div>
-          <p className="text-xs font-bold text-gray-500 tracking-[0.2em]">MIMI AI</p>
-          <h1 className="text-2xl font-black tracking-tight">Command Center</h1>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center">
-          <span className="text-xs font-bold">PJ</span>
-        </div>
-      </div>
-
-      <div className="bg-white text-black p-8 rounded-[2rem] mb-8 relative overflow-hidden">
-        <p className="text-xs font-bold uppercase text-gray-500 mb-1">Total Net Worth</p>
-        <h2 className="text-4xl font-black tracking-tighter mb-4">
-          TZS {fmt(data?.net_worth / 1000000)}M
-        </h2>
-        <div className="flex gap-2">
-           <span className="bg-black text-white text-[10px] font-bold px-3 py-1 rounded-full">
-             Institutional Grade
-           </span>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Wallet size={16} className="text-gray-500" />
-          <p className="text-xs font-bold text-gray-500 uppercase">Liquid Assets</p>
-        </div>
-
-        {data?.accounts?.map((acc, i) => (
-          <div 
-            key={i} 
-            className={`p-6 rounded-[1.5rem] bg-gradient-to-br ${getGradient(acc.color_code)} border border-white/10 relative overflow-hidden group`}
-          >
-            <div className="relative z-10">
-              <div className="flex justify-between items-start mb-4">
-                <p className="font-bold text-lg">{acc.name}</p>
-                <div className="bg-black/20 p-2 rounded-full backdrop-blur-md">
-                   <ShieldCheck size={14} className="text-white/70"/>
-                </div>
-              </div>
-              <p className="text-xs text-white/60 font-mono mb-1">AVAILABLE BALANCE</p>
-              <p className="text-2xl font-bold tracking-tight">TZS {fmt(acc.balance)}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <button onClick={fetchData} className="fixed bottom-6 right-6 bg-blue-600 p-4 rounded-full shadow-lg shadow-blue-900/50">
-        <RefreshCw size={24} className="text-white" />
+  if (error) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-red-50 text-red-700 p-6">
+      <AlertCircle size={48} className="mb-4 text-red-500" />
+      <h2 className="text-xl font-bold mb-2">Connection Error</h2>
+      <p className="mb-6 bg-white p-4 rounded border border-red-100">{error}</p>
+      <button onClick={loadData} className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-full font-bold hover:bg-red-700 transition">
+        <RefreshCw size={20} /> Retry
       </button>
     </div>
+  );
+
+  const safeData = data || {};
+  const transactions = safeData.transactions || [];
+  const accounts = safeData.accounts || [];
+  const totalDebt = safeData.total_debt || 0;
+  const netWorth = (safeData.total_assets || 0) + totalDebt;
+
+  return (
+    <main className="min-h-screen bg-[#F8F9FA] p-6 pb-24">
+      <div className="max-w-xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Mimi Finance</h1>
+            <p className="text-sm text-gray-500">Live Dashboard</p>
+          </div>
+          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-lg">🦁</div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-emerald-50 p-5 rounded-[2rem] border border-emerald-100">
+            <div className="flex items-center gap-2 text-emerald-700 mb-2">
+              <TrendingUp size={18} />
+              <span className="text-xs font-bold uppercase tracking-wider">Net Worth</span>
+            </div>
+            <div className="text-xl font-bold text-gray-900">{fmt(netWorth)}</div>
+          </div>
+          <div className="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm">
+            <div className="flex items-center gap-2 text-rose-500 mb-2">
+              <DollarSign size={18} />
+              <span className="text-xs font-bold uppercase tracking-wider">Debt</span>
+            </div>
+            <div className="text-xl font-bold text-rose-600">{fmt(totalDebt)}</div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="font-bold text-lg px-2">Accounts</h2>
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+            {accounts.map((acc, i) => (
+              <div key={i} className="p-5 border-b border-gray-50 last:border-0 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+                    <Wallet size={20} />
+                  </div>
+                  <div>
+                    <div className="font-bold text-gray-900">{acc.name}</div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wide">{acc.type}</div>
+                  </div>
+                </div>
+                <div className="font-mono font-medium text-gray-900">{fmt(acc.balance)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="font-bold text-lg px-2">Recent Activity</h2>
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden p-6">
+             {transactions.length > 0 ? (
+               <div className="space-y-6">
+                 {transactions.slice(0, 50).map((tx, i) => (
+                   <div key={i} className="flex justify-between items-center">
+                      <div className="flex flex-col max-w-[65%]">
+                        <span className="font-medium text-gray-900 truncate">{tx.description}</span>
+                        <span className="text-xs text-gray-400">{tx.date} • {tx.category}</span>
+                      </div>
+                      <span className={`font-mono ${tx.amount > 0 ? "text-emerald-600" : "text-gray-900"}`}>
+                        {fmt(tx.amount)}
+                      </span>
+                   </div>
+                 ))}
+               </div>
+             ) : (
+               <div className="text-center text-gray-400 py-4">No recent transactions</div>
+             )}
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }
