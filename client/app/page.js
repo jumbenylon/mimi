@@ -6,8 +6,8 @@ import {
   DollarSign, CreditCard, Activity, Calendar 
 } from 'lucide-react';
 
-// --- THE FIX: SMART URL SELECTION ---
-// If Vercel provides a URL, use it. Otherwise, default to localhost (for testing).
+// --- THE FIX ---
+// This tells the app: "Check Render's settings first. If empty, use Localhost."
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function Dashboard() {
@@ -16,9 +16,9 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // We use API_BASE to connect to Render (Cloud) instead of Terminal 1
-    console.log("Connecting to:", API_BASE); 
+    console.log("Connecting to:", API_BASE); // Debugging
     
+    // Use the variable, not the hardcoded string
     fetch(`${API_BASE}/api/dashboard`)
       .then((res) => {
         if (!res.ok) throw new Error("Backend Unreachable");
@@ -30,16 +30,13 @@ export default function Dashboard() {
       })
       .catch((err) => {
         console.error("Dashboard Load Error:", err);
-        // We show the URL we tried to connect to, so you can debug
         setError(`Failed to connect to: ${API_BASE}`);
         setLoading(false);
       });
   }, []);
 
-  // FORMAT CURRENCY
   const fmt = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n || 0);
 
-  // LOADING STATE
   if (loading) return (
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center space-y-4">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
@@ -47,15 +44,12 @@ export default function Dashboard() {
     </div>
   );
 
-  // ERROR STATE
   if (error) return (
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6 text-center">
       <div className="p-4 bg-red-100 text-red-600 rounded-full mb-4"><Activity size={32} /></div>
       <h3 className="text-lg font-bold text-gray-900">Connection Failed</h3>
-      <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
-        {error}
-      </p>
-      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry Connection</button>
+      <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">{error}</p>
+      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry</button>
     </div>
   );
 
@@ -63,8 +57,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] pb-24 font-sans text-gray-900">
-      
-      {/* HEADER SECTION */}
+      {/* HEADER */}
       <div className="bg-white px-6 pt-12 pb-6 border-b border-gray-200 sticky top-0 z-20">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -76,7 +69,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* QUICK STATS CARDS */}
+        {/* QUICK STATS */}
         <div className="grid grid-cols-3 gap-2">
            <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
               <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Assets</p>
@@ -95,10 +88,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* MAIN BODY */}
+      {/* BODY */}
       <div className="p-6 space-y-6">
-        
-        {/* ACCOUNTS LIST */}
+        {/* ACCOUNTS */}
         <div>
           <div className="flex justify-between items-end mb-3">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Accounts</h3>
@@ -117,29 +109,28 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* RECENT TRANSACTIONS */}
+        {/* TRANSACTIONS */}
         <div>
            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">Recent Activity</h3>
-           <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-4">
              {transactions.map((tx, i) => (
-               <div key={i} className="p-4 border-b border-gray-100 last:border-0 flex justify-between items-center">
-                 <div className="flex items-center gap-3">
-                   <div className={`p-2 rounded-full ${tx.amount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-600'}`}>
-                     {tx.amount > 0 ? <ArrowDownRight size={16} /> : <ArrowUpRight size={16} />}
-                   </div>
-                   <div>
-                     <p className="font-bold text-sm text-gray-900 truncate w-40">{tx.description}</p>
-                     <p className="text-xs text-gray-400">{new Date(tx.date).toLocaleDateString()}</p>
-                   </div>
-                 </div>
-                 <span className={`font-mono text-sm font-bold ${tx.amount > 0 ? 'text-emerald-600' : 'text-gray-900'}`}>
-                   {tx.amount > 0 ? '+' : ''}{fmt(tx.amount)}
-                 </span>
+               <div key={i} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${tx.amount > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-600'}`}>
+                       {tx.amount > 0 ? <ArrowDownRight size={16}/> : <ArrowUpRight size={16}/>}
+                    </div>
+                    <div>
+                        <p className="font-bold text-sm text-gray-900 truncate w-32">{tx.description}</p>
+                        <p className="text-xs text-gray-400">{tx.date}</p>
+                    </div>
+                  </div>
+                  <span className={`font-mono text-sm font-bold ${tx.amount > 0 ? "text-emerald-600" : "text-gray-900"}`}>
+                    {fmt(tx.amount)}
+                  </span>
                </div>
              ))}
            </div>
         </div>
-
       </div>
     </div>
   );
