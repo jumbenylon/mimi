@@ -6,7 +6,8 @@ import {
   DollarSign, CreditCard, Activity, Calendar 
 } from 'lucide-react';
 
-// SMART URL SELECTION (The Fix)
+// --- THE FIX: SMART URL SELECTION ---
+// If Vercel provides a URL, use it. Otherwise, default to localhost (for testing).
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function Dashboard() {
@@ -15,7 +16,9 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // We use API_BASE here, so it works on Cloud AND Localhost
+    // We use API_BASE to connect to Render (Cloud) instead of Terminal 1
+    console.log("Connecting to:", API_BASE); 
+    
     fetch(`${API_BASE}/api/dashboard`)
       .then((res) => {
         if (!res.ok) throw new Error("Backend Unreachable");
@@ -27,28 +30,32 @@ export default function Dashboard() {
       })
       .catch((err) => {
         console.error("Dashboard Load Error:", err);
-        setError(err.message);
+        // We show the URL we tried to connect to, so you can debug
+        setError(`Failed to connect to: ${API_BASE}`);
         setLoading(false);
       });
   }, []);
 
+  // FORMAT CURRENCY
   const fmt = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n || 0);
 
+  // LOADING STATE
   if (loading) return (
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center space-y-4">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-      <p className="text-gray-400 text-sm animate-pulse">Connecting to Secure Vault...</p>
+      <p className="text-gray-400 text-sm animate-pulse">Syncing with Cloud Vault...</p>
     </div>
   );
 
+  // ERROR STATE
   if (error) return (
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6 text-center">
       <div className="p-4 bg-red-100 text-red-600 rounded-full mb-4"><Activity size={32} /></div>
       <h3 className="text-lg font-bold text-gray-900">Connection Failed</h3>
       <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
-        Could not reach the backend at {API_BASE}.
+        {error}
       </p>
-      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry</button>
+      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry Connection</button>
     </div>
   );
 
@@ -57,7 +64,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#F3F4F6] pb-24 font-sans text-gray-900">
       
-      {/* HEADER */}
+      {/* HEADER SECTION */}
       <div className="bg-white px-6 pt-12 pb-6 border-b border-gray-200 sticky top-0 z-20">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -69,7 +76,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* QUICK STATS ROW */}
+        {/* QUICK STATS CARDS */}
         <div className="grid grid-cols-3 gap-2">
            <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
               <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Assets</p>
@@ -88,10 +95,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* BODY */}
+      {/* MAIN BODY */}
       <div className="p-6 space-y-6">
         
-        {/* ACCOUNTS SCROLL */}
+        {/* ACCOUNTS LIST */}
         <div>
           <div className="flex justify-between items-end mb-3">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Accounts</h3>
