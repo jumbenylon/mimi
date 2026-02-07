@@ -1,30 +1,55 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Wallet, TrendingUp, ChevronRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Wallet, TrendingUp, ChevronRight, Activity } from 'lucide-react';
 
-// SMART URL SELECTOR
+// --- SMART URL SELECTION ---
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function LoansPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log("Loans connecting to:", API_BASE);
+
     fetch(`${API_BASE}/api/loans`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Backend Unreachable");
+        return res.json();
+      })
       .then((d) => {
         setData(d);
         setLoading(false);
       })
-      .catch((err) => setLoading(false));
+      .catch((err) => {
+        console.error("Loans Load Error:", err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
 
   const fmt = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n || 0);
   const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 
-  if (loading) return <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center text-emerald-600 font-medium animate-pulse">Loading Debt Portfolio...</div>;
-  if (!data || !data.summary) return <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center text-red-500">Data Unavailable</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      <p className="text-gray-400 text-sm animate-pulse">Loading Debt Portfolio...</p>
+    </div>
+  );
+  
+  if (error) return (
+    <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center p-6 text-center">
+      <div className="p-4 bg-red-100 text-red-600 rounded-full mb-4"><Activity size={32} /></div>
+      <h3 className="text-lg font-bold text-gray-900">Connection Failed</h3>
+      <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
+        Could not reach backend at {API_BASE}.
+      </p>
+      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry</button>
+    </div>
+  );
 
   const { summary, loans = [], transactions = [] } = data;
 
