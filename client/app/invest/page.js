@@ -1,41 +1,64 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ChevronDown, ChevronUp, Landmark, TrendingUp, ShieldCheck, CarFront, Map, Building2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Landmark, TrendingUp, ShieldCheck, CarFront, Map, Building2, Activity } from 'lucide-react';
 import Link from 'next/link';
+
+// --- SMART URL SELECTION (The Fix) ---
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function InvestPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState('DSE'); 
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/investments')
+    // Debugging: See where we are connecting
+    console.log("Invest Page connecting to:", API_BASE);
+
+    fetch(`${API_BASE}/api/investments`)
       .then(res => {
-        if (!res.ok) throw new Error("Server Error");
+        if (!res.ok) throw new Error("Backend Unreachable");
         return res.json();
       })
       .then(d => {
         setData(d);
         setLoading(false);
       })
-      .catch(err => setLoading(false));
+      .catch(err => {
+        console.error("Invest Load Error:", err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
 
   const fmt = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n || 0);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-emerald-600 font-medium animate-pulse">Loading Assets...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      <p className="text-gray-400 text-sm animate-pulse">Loading Assets...</p>
+    </div>
+  );
   
-  if (!data || !data.portfolio) return (
-    <div className="min-h-screen flex items-center justify-center text-red-500">
-      Portfolio Data Unavailable. (Check Terminal 1)
+  if (error) return (
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-6 text-center">
+      <div className="p-4 bg-red-100 text-red-600 rounded-full mb-4"><Activity size={32} /></div>
+      <h3 className="text-lg font-bold text-gray-900">Connection Failed</h3>
+      <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
+        Could not reach backend at {API_BASE}
+      </p>
+      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry</button>
     </div>
   );
 
-  // LOGING FOR DEBUG (Check your browser console if still empty)
-  console.log("Loaded Portfolio:", data.portfolio);
+  if (!data || !data.portfolio) return (
+    <div className="min-h-screen flex items-center justify-center text-red-500">
+      Portfolio Data Empty.
+    </div>
+  );
 
-  // GROUPING LOGIC - FUZZY MATCHING
-  // We lowercase everything to ensure matches work regardless of "Vehicle" vs "vehicle"
+  // GROUPING LOGIC
   const stocks = data.portfolio.filter(p => p.category.toUpperCase() === 'DSE');
   const funds = data.portfolio.filter(p => p.category.toUpperCase() === 'UTT');
   
