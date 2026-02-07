@@ -1,10 +1,14 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { PieChart, TrendingDown, TrendingUp, Calendar, ArrowRight, List, ChevronDown, ChevronUp } from 'lucide-react';
+import { PieChart, TrendingDown, TrendingUp, Calendar, ArrowRight, List, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+
+// --- SMART URL SELECTION ---
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function Analytics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Collapsible Section Component
   const CollapsibleSection = ({ title, icon: Icon, children }) => {
@@ -29,22 +33,44 @@ export default function Analytics() {
   };
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/analytics')
-      .then(res => res.json())
+    console.log("Analytics connecting to:", API_BASE);
+
+    fetch(`${API_BASE}/api/analytics`)
+      .then(res => {
+        if (!res.ok) throw new Error("Backend Unreachable");
+        return res.json();
+      })
       .then(d => {
         setData(d);
         setLoading(false);
       })
       .catch(err => {
         console.error("Analytics Error:", err);
+        setError(err.message);
         setLoading(false);
       });
   }, []);
 
   const fmt = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n || 0);
-  const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
-  if (loading) return <div className="p-10 text-center text-gray-500 animate-pulse">Computing Financial Logic...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      <p className="text-gray-400 text-sm animate-pulse">Computing Financial Logic...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-6 text-center">
+      <div className="p-4 bg-red-100 text-red-600 rounded-full mb-4"><Activity size={32} /></div>
+      <h3 className="text-lg font-bold text-gray-900">Connection Failed</h3>
+      <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
+        Could not reach backend at {API_BASE}
+      </p>
+      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry</button>
+    </div>
+  );
+
   if (!data) return <div className="p-10 text-center text-red-500">Analytics Unavailable</div>;
 
   // SAFE ACCESS: Ensure breakdown exists
