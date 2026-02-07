@@ -1,21 +1,34 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Filter, Smartphone, Building, CreditCard, Calendar } from 'lucide-react';
+import { ArrowLeft, Filter, Smartphone, Building, CreditCard, Calendar, Activity } from 'lucide-react';
 import Link from 'next/link';
+
+// --- SMART URL SELECTION ---
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function BudgetPage() {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [view, setView] = useState('MONTH'); // WEEK, MONTH, QUARTER, YEAR
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/transactions')
-      .then(res => res.json())
+    console.log("Budget connecting to:", API_BASE);
+
+    fetch(`${API_BASE}/api/transactions`)
+      .then(res => {
+        if (!res.ok) throw new Error("Backend Unreachable");
+        return res.json();
+      })
       .then(d => {
         setTransactions(d.transactions);
         setLoading(false);
       })
-      .catch(err => setLoading(false));
+      .catch(err => {
+        console.error("Budget Load Error:", err);
+        setError(err.message);
+        setLoading(false);
+      });
   }, []);
 
   const fmt = (n) => new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS', maximumFractionDigits: 0 }).format(n || 0);
@@ -38,7 +51,6 @@ export default function BudgetPage() {
       let key = "";
       
       if (view === 'WEEK') {
-        // Week number logic
         const start = new Date(date.getFullYear(), 0, 1);
         const days = Math.floor((date - start) / (24 * 60 * 60 * 1000));
         const week = Math.ceil((days + 1) / 7);
@@ -57,12 +69,28 @@ export default function BudgetPage() {
       if (tx.amount > 0) groups[key].total_in += tx.amount;
       else groups[key].total_out += Math.abs(tx.amount);
     });
-    return Object.values(groups); // Returns array of group objects
+    return Object.values(groups); 
   };
 
   const groupedData = groupTransactions();
 
-  if (loading) return <div className="p-10 text-center text-sm font-semibold text-gray-500 animate-pulse">Loading Financial Data...</div>;
+  if (loading) return (
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      <p className="text-gray-400 text-sm animate-pulse">Loading Financial History...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center p-6 text-center">
+      <div className="p-4 bg-red-100 text-red-600 rounded-full mb-4"><Activity size={32} /></div>
+      <h3 className="text-lg font-bold text-gray-900">Connection Failed</h3>
+      <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
+        Could not reach backend at {API_BASE}
+      </p>
+      <button onClick={() => window.location.reload()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold">Retry</button>
+    </div>
+  );
 
   return (
     <main className="min-h-screen bg-[#F8F9FA] p-6 pb-24">
@@ -94,7 +122,7 @@ export default function BudgetPage() {
 
         {/* TRANSACTION LIST */}
         <div className="space-y-6">
-          {groupedData.map((group, i) => (
+          {groupedData.length > 0 ? groupedData.map((group, i) => (
             <div key={i} className="space-y-3">
               {/* Group Header */}
               <div className="flex justify-between items-end px-2">
@@ -141,7 +169,9 @@ export default function BudgetPage() {
                 })}
               </div>
             </div>
-          ))}
+          )) : (
+            <div className="p-10 text-center text-gray-400">No transactions found.</div>
+          )}
         </div>
 
       </div>
