@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Wallet, TrendingUp, Plus, Menu, BarChart3, Target, Settings, User, X, CreditCard } from 'lucide-react';
+import { Wallet, TrendingUp, Plus, Menu, BarChart3, Target, Settings, User, X, CreditCard, PieChart } from 'lucide-react';
 import AddTransactionModal from './AddTransactionModal';
 
 export default function GlobalNav() {
@@ -10,7 +10,7 @@ export default function GlobalNav() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  const isActive = (path) => pathname === path ? "text-black" : "text-gray-400 hover:text-gray-600 transition";
+  const isActive = (path) => pathname === path ? "text-black text-emerald-600" : "text-gray-400 hover:text-gray-600 transition";
 
   return (
     <>
@@ -42,28 +42,34 @@ export default function GlobalNav() {
 
       {/* FIXED BOTTOM NAVIGATION */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 pb-6 flex justify-between items-end z-50">
-        <Link href="/" className={`flex flex-col items-center gap-1 ${isActive('/')} w-16`}>
+        
+        {/* 1. HOME */}
+        <Link href="/" className={`flex flex-col items-center gap-1 w-16 ${pathname === '/' ? "text-emerald-600" : "text-gray-400"}`}>
           <Wallet size={24} strokeWidth={pathname === '/' ? 2.5 : 2} />
           <span className="text-[10px] font-bold">Home</span>
         </Link>
 
-        <Link href="/analytics" className={`flex flex-col items-center gap-1 ${isActive('/analytics')} w-16`}>
-          <BarChart3 size={24} strokeWidth={pathname === '/analytics' ? 2.5 : 2} />
+        {/* 2. BUDGET (FIXED LINK: Was /analytics, Now /budget) */}
+        <Link href="/budget" className={`flex flex-col items-center gap-1 w-16 ${pathname === '/budget' ? "text-emerald-600" : "text-gray-400"}`}>
+          <PieChart size={24} strokeWidth={pathname === '/budget' ? 2.5 : 2} />
           <span className="text-[10px] font-bold">Budget</span>
         </Link>
         
+        {/* 3. CENTER PLUS BUTTON */}
         <div className="relative -top-5">
-           <button onClick={() => setIsModalOpen(true)} className="h-14 w-14 bg-[#D93025] rounded-full flex items-center justify-center shadow-lg shadow-red-200 border-4 border-white cursor-pointer active:scale-95 transition">
+           <button onClick={() => setIsModalOpen(true)} className="h-14 w-14 bg-[#D93025] rounded-full flex items-center justify-center shadow-lg shadow-red-200 border-4 border-white cursor-pointer active:scale-95 transition hover:bg-red-600">
              <Plus size={28} className="text-white" />
            </button>
         </div>
 
-        <Link href="/invest" className={`flex flex-col items-center gap-1 ${isActive('/invest')} w-16`}>
+        {/* 4. INVEST */}
+        <Link href="/invest" className={`flex flex-col items-center gap-1 w-16 ${pathname === '/invest' ? "text-emerald-600" : "text-gray-400"}`}>
           <TrendingUp size={24} strokeWidth={pathname === '/invest' ? 2.5 : 2} />
           <span className="text-[10px] font-bold">Invest</span>
         </Link>
 
-        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`flex flex-col items-center gap-1 ${isMenuOpen ? "text-black" : "text-gray-400 hover:text-gray-600"} w-16 transition`}>
+        {/* 5. MENU TOGGLE */}
+        <button onClick={() => setIsMenuOpen(!isMenuOpen)} className={`flex flex-col items-center gap-1 w-16 transition ${isMenuOpen ? "text-gray-900" : "text-gray-400 hover:text-gray-600"}`}>
           {isMenuOpen ? <X size={24} strokeWidth={2.5} /> : <Menu size={24} strokeWidth={2} />}
           <span className="text-[10px] font-bold">{isMenuOpen ? "Close" : "Menu"}</span>
         </button>
